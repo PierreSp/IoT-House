@@ -1,7 +1,7 @@
 <html>
    <body>
       <h1> Control page for window shades: </h1>
-      <form action = "http://localhost:3000/move_shade" method = "post">
+      <form action = "http://localhost:3000/move_shade" method = "post" onsubmit="json_button()">
          
          <br>
          <p>Enter Password:</p>
@@ -31,6 +31,23 @@
           </fieldset> 
          <p><input type = "submit" value = "submit" /></p>
       </form>
-      
+
+      <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+  <script type="text/javascript" charset="utf-8">
+      socket = io.connect('http://' + document.domain + ':' + location.port);
+      socket.on('connect', function() {
+          socket.emit('client_connected', {data: 'New client!'});
+      });
+
+      socket.on('message', function (data) {
+          console.log('message form backend ' + data);
+      });
+
+      function json_button() {
+          socket.send('{"message": "test"}');
+      }
+
+
+  </script>
    </body>
 </html>

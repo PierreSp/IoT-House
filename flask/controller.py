@@ -1,11 +1,14 @@
 import subprocess
 import random
 from flask import Flask, redirect, url_for, request, render_template, session
+from flask_socketio import SocketIO, emit, send
+
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 # Secret key for session
 app.secret_key = "".join([str(x) for x in random.sample(range(1000), 10)])
-PASSWORD = "pw"
+PASSWORD = "pw"  # Password (currently disabled)
 
 # App routes define the adresses used
 
@@ -17,19 +20,38 @@ def settings_mainpage():
     return render_template('index.html')
 
 
+
+@socketio.on('client_connected')
+def handle_client_connect_event(json):
+    print('received json: {0}'.format(str(json)))
+    send('message')
+
+
+@socketio.on('message')
+def handle_json_button(json):
+    # it will forward the json to all clients.
+    send(json, json=True)   
+
+
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected')
+
+
 @app.route('/moved_shade')
 def moved():
     # if session["pw"]== PASSWORD:
     shades = session["shade"]
     terminal = ""
+    # Check which shade is called and run specific command in terminal
+    # Or do whatever is needed to move the window
     if "shade1" in shades:
         terminal += "<br>" + str(subprocess.check_output(['echo $HOME'], shell=True))
     if "shade2" in shades:
         terminal += "<br>" + str(subprocess.check_output(['echo $HOME'], shell=True))
     if "shade3" in shades:
         terminal += "<br>" + str(subprocess.check_output(['echo $HOME'], shell=True))
-    # Or do whatever is needed to move the window
-    # shade or to controll the light
+    socketio.send("CHANGED")
     return("""The shade was moved. Return: {} Shades selected: {} """.format(terminal, shades))
 
 
@@ -58,5 +80,5 @@ def login():
 
 
 if __name__ == '__main__':
-    # Set port for webserver
-    app.run(debug=True, port=3000)
+    # Set port for webserver and run it
+    socketio.run(app, debug=True, port=3000, use_reloader=False)
